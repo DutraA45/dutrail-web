@@ -1,0 +1,66 @@
+<main class="flex min-h-dvh items-center justify-center p-4">
+  <section hlmCard class="w-full max-w-sm" aria-labelledby="login-title">
+    <div hlmCardHeader>
+      <h1 hlmCardTitle id="login-title">Entrar</h1>
+      <p hlmCardDescription>Acesse sua conta Dutrail.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form [formRoot]="loginForm">
+        <div hlmFieldGroup>
+          @if (apiError(); as messages) {
+            <app-error-alert title="Não foi possível entrar" [messages]="messages" />
+          }
+
+          <div hlmField>
+            <label hlmFieldLabel for="login-email">Email</label>
+            <input
+              hlmInput
+              id="login-email"
+              type="email"
+              autocomplete="email"
+              [formField]="loginForm.email"
+            />
+            @for (error of loginForm.email().errors(); track error.kind) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="login-password">Senha</label>
+            <input
+              hlmInput
+              id="login-password"
+              type="password"
+              autocomplete="current-password"
+              [formField]="loginForm.password"
+            />
+            @for (error of loginForm.password().errors(); track error.kind) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          </div>
+
+          <button hlmBtn size="lg" type="submit" [disabled]="loginForm().submitting()">
+            @if (loginForm().submitting()) {
+              <hlm-spinner aria-label="Entrando" />
+            }
+            Entrar
+          </button>
+        </div>
+      </form>
+
+      <hlm-field-separator class="my-4">ou</hlm-field-separator>
+
+      <app-google-sign-in-button />
+    </div>
+
+    <div hlmCardFooter class="justify-center text-sm">
+      <p>
+        Não tem conta?
+        <a class="font-medium underline underline-offset-4" [routerLink]="paths.signup"
+          >Criar conta</a
+        >
+      </p>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,79 @@
+<main class="flex min-h-dvh items-center justify-center p-4">
+  <section hlmCard class="w-full max-w-sm" aria-labelledby="signup-title">
+    <div hlmCardHeader>
+      <h1 hlmCardTitle id="signup-title">Criar conta</h1>
+      <p hlmCardDescription>Comece a usar o Dutrail.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form [formRoot]="signupForm">
+        <div hlmFieldGroup>
+          @if (apiError(); as messages) {
+            <app-error-alert title="Não foi possível criar a conta" [messages]="messages" />
+          }
+
+          <div hlmField>
+            <label hlmFieldLabel for="signup-name">Nome (opcional)</label>
+            <input
+              hlmInput
+              id="signup-name"
+              type="text"
+              autocomplete="name"
+              [formField]="signupForm.name"
+            />
+            @for (error of signupForm.name().errors(); track error.kind) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="signup-email">Email</label>
+            <input
+              hlmInput
+              id="signup-email"
+              type="email"
+              autocomplete="email"
+              [formField]="signupForm.email"
+            />
+            @for (error of signupForm.email().errors(); track error.kind) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="signup-password">Senha</label>
+            <input
+              hlmInput
+              id="signup-password"
+              type="password"
+              autocomplete="new-password"
+              [formField]="signupForm.password"
+            />
+            <p hlmFieldDescription>Pelo menos 8 caracteres.</p>
+            @for (error of signupForm.password().errors(); track error.kind) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          </div>
+
+          <button hlmBtn size="lg" type="submit" [disabled]="signupForm().submitting()">
+            @if (signupForm().submitting()) {
+              <hlm-spinner aria-label="Criando conta" />
+            }
+            Criar conta
+          </button>
+        </div>
+      </form>
+
+      <hlm-field-separator class="my-4">ou</hlm-field-separator>
+
+      <app-google-sign-in-button />
+    </div>
+
+    <div hlmCardFooter class="justify-center text-sm">
+      <p>
+        Já tem conta?
+        <a class="font-medium underline underline-offset-4" [routerLink]="paths.login">Entrar</a>
+      </p>
+    </div>
+  </section>
+</main>
