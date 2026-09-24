@@ -27,21 +27,27 @@ frontend precisa rodar nessa porta. A URL da API fica em
 ```
 src/app/
 ├── core/        singletons que atravessam a aplicação (nada de UI reutilizável)
+│   ├── activities/  modelo Activity, ActivityApi e formatação de métricas
 │   ├── auth/        sessão: AuthService, token em memória, refresh, guards, interceptor de 401
 │   ├── http/        URL da API, headers obrigatórios, tradução de erros da API
-│   └── navigation/  caminhos das telas usados em guards e redirects
+│   └── navigation/  caminhos das telas usados em guards, redirects e na sidebar
 ├── shared/      componentes reutilizáveis entre features, sem regra de negócio
 │   └── ui/          ex.: ErrorAlert (alerta de erro padrão sobre o hlm-alert)
 └── features/    uma pasta por funcionalidade, cada uma carregada sob demanda
     ├── landing/     página pública (/)
     ├── auth/        /login, /signup e /auth/callback (retorno do Google)
-    └── dashboard/   área logada (/app), protegida por guard
+    ├── app-shell/   layout da área logada (/app): sidebar inset, menu e conta/logout
+    ├── feed/        /app/feed (home): atividades em ordem cronológica
+    ├── activities/  /app/activities (lista + importação .fit) e /app/activities/:id
+    └── coming-soon/ página "em construção" das telas planejadas do menu
 
 libs/ui/         componentes spartan/ui ("helm") gerados pela CLI do spartan
 ```
 
 Regras de dependência: `features` importam de `core` e `shared`, nunca umas das
-outras; `shared` não conhece `core`; `core` não tem componentes.
+outras; `shared` não conhece `core`; `core` não tem componentes. Por isso as
+rotas da área logada (layout + features dentro dele) são montadas em
+`app.routes.ts`, e não dentro do `app-shell`.
 
 Os componentes em `libs/ui` são código copiado para o projeto (como no
 shadcn/ui) e importados pelo alias `@spartan-ng/helm/*`. Para adicionar um novo:
@@ -67,3 +73,24 @@ npx ng g @spartan-ng/cli:ui <componente>   # ex.: dialog, select
   `POST /auth/google/exchange`.
 - **SSR**: só `/`, `/login` e `/signup` são pré-renderizados. A área logada e o
   callback renderizam só no browser, onde a sessão existe.
+
+## Atividades
+
+Feed, lista e detalhe consomem as rotas reais da API, documentadas em
+[`dutrail-api/docs/ACTIVITIES-CONTRACT.md`](../dutrail-api/docs/ACTIVITIES-CONTRACT.md)
+e espelhadas em [`core/activities/activity.models.ts`](src/app/core/activities/activity.models.ts).
+
+- **Paginação por cursor**: `GET /activities` devolve `{ items, nextCursor }`.
+  O `CursorPager` (`core/http/cursor-pager.ts`) acumula as páginas no botão
+  "Carregar mais" e, se a API recusar o cursor (400 `Invalid cursor`),
+  recomeça a lista do início. O cursor é opaco: só é devolvido à API.
+- **Detalhe**: id inexistente, de outro usuário ou malformado recebem o mesmo
+  404, e a tela mostra o mesmo "não encontrada" nos três casos.
+- **Pendências (`TODO(api)`)**: importação de `.fit` (`POST /activities/import`
+  ainda não existe; a tela mostra que a importação não está disponível) e
+  feed de amigos (hoje só as atividades do próprio usuário).
+
+Os itens do menu sem tela ainda (painel, notificações, calendário, rotas,
+treino, configurações) já apontam para os caminhos definitivos e abrem a página
+"em construção"; para construir um deles, troque o `comingSoon(...)` da rota em
+`app.routes.ts`.

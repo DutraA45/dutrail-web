@@ -1,16 +1,22 @@
+import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import localePt from '@angular/common/locales/pt';
+import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideClientHydration } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideSpartanHlm } from '@spartan-ng/helm/utils';
 import { routes } from './app.routes';
 import { refreshOnUnauthorizedInterceptor } from './core/auth/refresh-on-unauthorized.interceptor';
 import { apiRequestHeadersInterceptor } from './core/http/api-request-headers.interceptor';
 
+// Datas e números (DatePipe, formatNumber) no formato brasileiro, como o resto da UI.
+registerLocaleData(localePt);
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // Parâmetros de rota (ex. `:id`) chegam nas páginas como `input()`.
+    provideRouter(routes, withComponentInputBinding()),
     provideClientHydration(),
     provideHttpClient(
       withFetch(),
@@ -20,5 +26,6 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([refreshOnUnauthorizedInterceptor, apiRequestHeadersInterceptor]),
     ),
     provideSpartanHlm(),
+    { provide: LOCALE_ID, useValue: 'pt-BR' },
   ],
 };
