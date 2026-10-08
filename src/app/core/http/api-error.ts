@@ -13,10 +13,10 @@ export interface ApiErrorBody {
 /** Mensagem específica por status HTTP, para a tela ajustar o texto ao contexto. */
 export type ApiErrorMessageOverrides = Partial<Record<number, string>>;
 
+// Sem 409 de propósito: o significado depende da rota (email já cadastrado no
+// signup, atividade já importada na importação), então cada tela trata o seu.
 const DEFAULT_MESSAGES: Readonly<Record<number, string>> = {
   [HttpStatusCode.Unauthorized]: 'Sua sessão expirou. Entre novamente.',
-  [HttpStatusCode.Conflict]: 'Este email já está em uso.',
-  [HttpStatusCode.TooManyRequests]: 'Muitas tentativas. Aguarde um minuto e tente novamente.',
 };
 
 const NETWORK_ERROR_MESSAGE =
@@ -55,8 +55,9 @@ export function isTransientHttpError(error: unknown): boolean {
  * Traduz qualquer erro vindo da API em mensagens prontas para exibir ao usuário.
  *
  * Centralizar isso aqui evita que cada tela reinvente o tratamento de 0/400/401/
- * 409/429/5xx. As telas só passam `overrides` quando o mesmo status significa
- * algo diferente no seu contexto (ex. 401 no login = credenciais inválidas).
+ * 429/5xx. As telas só passam `overrides` quando o mesmo status significa algo
+ * diferente no seu contexto (ex. 401 no login = credenciais inválidas) ou
+ * quando ele só tem sentido numa rota (ex. 409).
  */
 export function describeApiError(
   error: unknown,
@@ -83,10 +84,45 @@ export function describeApiError(
     return Array.isArray(message) ? message : [message];
   }
 
+  if (error.status === HttpStatusCode.TooManyRequests) {
+    return [describeTooManyRequests(error.headers.get('Retry-After'))];
+  }
+
   const fallback = DEFAULT_MESSAGES[error.status];
   if (fallback) {
     return [fallback];
   }
 
   return [UNEXPECTED_ERROR_MESSAGE];
+}
+
+/**
+ * Mensagem do 429 a partir do header `Retry-After` (em segundos, como o
+ * contrato garante). Abaixo de um minuto, em segundos; a partir disso, em
+ * minutos arredondados para cima. Ausente ou não numérico (ex. 429 de um proxy), o
+ * tempo é desconhecido.
+ */
+export function describeTooManyRequests(retryAfter: string | null): string {
+  const seconds = parseRetryAfterSeconds(retryAfter);
+  if (seconds === null) {
+    return 'Muitas tentativas. Aguarde alguns instantes e tente de novo.';
+  }
+  if (seconds < 60) {
+    return `Muitas tentativas. Tente de novo em ${pluralize(seconds, 'segundo', 'segundos')}.`;
+  }
+  const minutes = Math.ceil(seconds / 60);
+  return `Muitas tentativas. Tente de novo em ${pluralize(minutes, 'minuto', 'minutos')}.`;
+}
+
+function parseRetryAfterSeconds(value: string | null): number | null {
+  const trimmed = value?.trim();
+  if (!trimmed || !/^\d+$/.test(trimmed)) {
+    return null;
+  }
+  // "0" vira 1 s: "tente de novo em 0 segundos" não faz sentido para o usuário.
+  return Math.max(1, Number(trimmed));
+}
+
+function pluralize(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
 }

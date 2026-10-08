@@ -1,4 +1,4 @@
-import { HttpStatusCode } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import {
   email,
@@ -8,6 +8,7 @@ import {
   FormRoot,
   maxLength,
   minLength,
+  pattern,
   required,
   ValidationError,
 } from '@angular/forms/signals';
@@ -20,10 +21,31 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SignupRequest } from '../../../core/auth/auth.models';
-import { describeApiError, httpStatusOf } from '../../../core/http/api-error';
+import { describeApiError, httpStatusOf, isApiErrorBody } from '../../../core/http/api-error';
 import { AppPaths } from '../../../core/navigation/app-paths';
 import { ErrorAlert } from '../../../shared/ui/error-alert';
 import { GoogleSignInButton } from '../components/google-sign-in-button';
+
+/**
+ * Exige um domínio com ponto (`ana@empresa.com`). O validador `email` do
+ * Angular aceita `ana@empresa`, que a API recusa com 400.
+ */
+const EMAIL_WITH_DOTTED_DOMAIN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const INVALID_EMAIL_MESSAGE = 'Informe um email válido.';
+const REJECTED_PASSWORD_MESSAGE =
+  'Escolha outra senha: esta é fraca ou já apareceu em vazamentos de dados.';
+const GENERIC_BAD_REQUEST_MESSAGE =
+  'Não foi possível concluir o cadastro. Confira os dados e tente de novo.';
+
+/** Texto do `message` de um erro da API (string ou lista), em minúsculas. */
+function apiMessageText(error: unknown): string {
+  if (!(error instanceof HttpErrorResponse) || !isApiErrorBody(error.error)) {
+    return '';
+  }
+  const { message } = error.error;
+  return (Array.isArray(message) ? message.join(' ') : message).toLowerCase();
+}
 
 /** Estado do formulário. `name` é string vazia no form, mas opcional na API. */
 interface SignupFormModel {
@@ -64,7 +86,8 @@ export class SignupPage {
     (field) => {
       maxLength(field.name, 100, { message: 'O nome tem no máximo 100 caracteres.' });
       required(field.email, { message: 'Informe seu email.' });
-      email(field.email, { message: 'Informe um email válido.' });
+      email(field.email, { message: INVALID_EMAIL_MESSAGE });
+      pattern(field.email, EMAIL_WITH_DOTTED_DOMAIN, { message: INVALID_EMAIL_MESSAGE });
       required(field.password, { message: 'Crie uma senha.' });
       minLength(field.password, 8, { message: 'A senha precisa ter pelo menos 8 caracteres.' });
       maxLength(field.password, 128, { message: 'A senha tem no máximo 128 caracteres.' });
@@ -90,9 +113,36 @@ export class SignupPage {
           fieldTree: fieldTree.email,
         };
       }
+      if (httpStatusOf(error) === HttpStatusCode.BadRequest) {
+        return this.describeBadRequest(error, fieldTree);
+      }
       this.apiError.set(describeApiError(error));
       return undefined;
     }
+  }
+
+  /**
+   * O texto do 400 vem em inglês e por campo (`["email must be an email"]`,
+   * `["password has appeared in a known data breach; ..."]`), então vira uma
+   * mensagem própria: email no campo de email, senha no alerta do formulário,
+   * e um texto genérico para o resto.
+   */
+  private describeBadRequest(
+    error: unknown,
+    fieldTree: FieldTree<SignupFormModel>,
+  ): ValidationError.WithOptionalFieldTree | undefined {
+    const text = apiMessageText(error);
+    const mentionsEmail = text.includes('email');
+    const mentionsPassword = text.includes('password');
+
+    if (mentionsPassword) {
+      this.apiError.set([REJECTED_PASSWORD_MESSAGE]);
+    } else if (!mentionsEmail) {
+      this.apiError.set([GENERIC_BAD_REQUEST_MESSAGE]);
+    }
+    return mentionsEmail
+      ? { kind: 'emailRejected', message: INVALID_EMAIL_MESSAGE, fieldTree: fieldTree.email }
+      : undefined;
   }
 
   /**

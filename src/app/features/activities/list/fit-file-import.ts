@@ -113,6 +113,7 @@ export class FitFileImport {
             // Depois que ela existir, este caso deixa de acontecer.
             [HttpStatusCode.NotFound]:
               'A importação de arquivos .fit ainda não está disponível no servidor.',
+            [HttpStatusCode.Conflict]: 'Esta atividade já foi importada.',
             [HttpStatusCode.PayloadTooLarge]: 'O arquivo é grande demais para ser importado.',
           }),
         );
