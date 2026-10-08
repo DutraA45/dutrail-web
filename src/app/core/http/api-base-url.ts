@@ -24,3 +24,15 @@ export function isApiUrl(url: string, apiBaseUrl: string): boolean {
 export function isAuthEndpoint(url: string, apiBaseUrl: string): boolean {
   return url.startsWith(`${apiBaseUrl}/auth/`);
 }
+
+/**
+ * Caminho de uma URL da API, sem a base e sem query string ou fragmento (ex.
+ * `/me`), ou `null` se a URL não é da nossa API. Serve para comparar rotas
+ * pelo caminho exato.
+ */
+export function apiPathOf(url: string, apiBaseUrl: string): string | null {
+  if (!isApiUrl(url, apiBaseUrl)) {
+    return null;
+  }
+  return url.slice(apiBaseUrl.length).split(/[?#]/, 1)[0];
+}

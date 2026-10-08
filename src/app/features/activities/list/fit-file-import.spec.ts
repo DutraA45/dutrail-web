@@ -70,6 +70,14 @@ describe('FitFileImport', () => {
     expect(alertText()).not.toContain('email');
   });
 
+  it('shows no message on a 404: the session has ended and the app is going to /login', () => {
+    selectFile(new File(['x'], 'ride.fit'));
+    failImport(404, 'User not found');
+
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(host.querySelector('button')?.disabled).toBe(false);
+  });
+
   it('shows the backend text of a 400 as it came (it is in Portuguese)', () => {
     selectFile(new File(['x'], 'ride.fit'));
     failImport(400, 'O arquivo .fit não é de uma atividade (tipo "course").');

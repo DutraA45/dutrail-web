@@ -6,7 +6,7 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { Activity } from '../../../core/activities/activity.models';
 import { ActivityApi } from '../../../core/activities/activity-api';
-import { describeApiError } from '../../../core/http/api-error';
+import { describeApiError, httpStatusOf } from '../../../core/http/api-error';
 import { ErrorAlert } from '../../../shared/ui/error-alert';
 
 /**
@@ -25,14 +25,7 @@ export function validateFitFile(file: Pick<File, 'name' | 'size'>): string | nul
   return null;
 }
 
-/**
- * Botão de importação de atividade a partir de um arquivo `.fit`.
- *
- * TODO(api): a rota `POST /activities/import` ainda não existe na API (ver
- * `ActivityApi.importFitFile`). A interface já está completa (seleção,
- * validação, loading e erro); até o endpoint existir, o envio termina no erro
- * de "importação indisponível" abaixo, sem afetar o resto da tela.
- */
+/** Botão de importação de atividade a partir de um arquivo `.fit`. */
 @Component({
   selector: 'app-fit-file-import',
   imports: [NgIcon, HlmButtonImports, HlmSpinnerImports, ErrorAlert],
@@ -107,12 +100,13 @@ export class FitFileImport {
       },
       error: (error: unknown) => {
         this.importing.set(false);
+        // 404 aqui é usuário apagado: o `endSessionOnUserNotFoundInterceptor` já
+        // encerrou a sessão e está indo para o login. Uma mensagem só piscaria.
+        if (httpStatusOf(error) === HttpStatusCode.NotFound) {
+          return;
+        }
         this.errorMessages.set(
           describeApiError(error, {
-            // Enquanto a API não tiver a rota de importação, o POST cai em 404.
-            // Depois que ela existir, este caso deixa de acontecer.
-            [HttpStatusCode.NotFound]:
-              'A importação de arquivos .fit ainda não está disponível no servidor.',
             [HttpStatusCode.Conflict]: 'Esta atividade já foi importada.',
             [HttpStatusCode.PayloadTooLarge]: 'O arquivo é grande demais para ser importado.',
           }),
