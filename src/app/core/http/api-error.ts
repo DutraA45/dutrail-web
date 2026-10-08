@@ -39,6 +39,19 @@ export function httpStatusOf(error: unknown): number | null {
 }
 
 /**
+ * Falha passageira, que não diz nada sobre a sessão: erro de rede (status 0),
+ * 429 ou 5xx. Nesses casos a sessão pode estar viva e vale tentar de novo depois.
+ */
+export function isTransientHttpError(error: unknown): boolean {
+  const status = httpStatusOf(error);
+  return (
+    status === 0 ||
+    status === HttpStatusCode.TooManyRequests ||
+    (status !== null && status >= HttpStatusCode.InternalServerError)
+  );
+}
+
+/**
  * Traduz qualquer erro vindo da API em mensagens prontas para exibir ao usuário.
  *
  * Centralizar isso aqui evita que cada tela reinvente o tratamento de 0/400/401/
