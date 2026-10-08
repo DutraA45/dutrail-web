@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { computed, DOCUMENT, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { catchError, firstValueFrom, map, Observable, of, switchMap, tap } from 'rxjs';
 import { API_BASE_URL } from '../http/api-base-url';
+import { isTransientHttpError } from '../http/api-error';
 import { AccessTokenStore } from './access-token.store';
 import {
   AuthResponse,
@@ -12,6 +13,12 @@ import {
   User,
 } from './auth.models';
 import { TokenRefreshService } from './token-refresh.service';
+
+/**
+ * Depois de uma falha passageira na checagem de sessão, por quanto tempo novas
+ * chamadas respondem "sem sessão" sem ir à API.
+ */
+export const SESSION_CHECK_COOLDOWN_MS = 5_000;
 
 /**
  * Fonte da verdade da sessão no frontend: quem é o usuário logado e as
@@ -35,6 +42,9 @@ export class AuthService {
 
   /** Checagem de sessão já feita (ou em andamento) nesta carga da página. */
   private sessionCheck: Promise<void> | null = null;
+
+  /** Instante (ms) da última checagem que falhou de forma passageira. */
+  private lastTransientFailureAt: number | null = null;
 
   signup(payload: SignupRequest): Observable<User> {
     return this.http
@@ -92,6 +102,23 @@ export class AuthService {
   }
 
   /**
+   * Encerra **todas** as sessões do usuário (todos os browsers e o app) com
+   * `POST /auth/logout-all` e limpa o estado local.
+   *
+   * Autentica pelo Bearer, não pelo cookie: os headers saem do interceptor, e
+   * um 401 aqui passa pelo refresh como em qualquer rota protegida. Como no
+   * `logout`, o estado local é limpo mesmo se a request falhar.
+   */
+  logoutAll(): Observable<void> {
+    return this.http.post<void>(`${this.apiBaseUrl}/auth/logout-all`, null).pipe(
+      tap({
+        complete: () => this.clearLocalSession(),
+        error: () => this.clearLocalSession(),
+      }),
+    );
+  }
+
+  /**
    * Garante que já se tentou restaurar a sessão nesta carga da página. É o que
    * os guards aguardam antes de decidir se uma rota pode ser aberta.
    *
@@ -102,12 +129,26 @@ export class AuthService {
    *
    * A checagem roda uma vez só: depois dela, login/logout mantêm o estado
    * atualizado, e repetir o refresh a cada navegação só rotacionaria o token à toa.
+   * A exceção é uma falha passageira (rede, 429, 5xx): aí o resultado não fica
+   * guardado e uma chamada posterior tenta de novo. Nos primeiros 5 s depois da
+   * falha, porém, a resposta é "sem sessão" sem nenhuma request. Senão o
+   * redirecionamento para o login (outro guard, mesma navegação) dispararia um
+   * novo refresh na hora, o que num 429 é refazer a ação, contra o contrato.
    */
   ensureSessionChecked(): Promise<void> {
     if (this.isAuthenticated()) {
       return Promise.resolve();
     }
-    this.sessionCheck ??= this.restoreSession();
+    if (this.sessionCheck) {
+      return this.sessionCheck;
+    }
+    if (
+      this.lastTransientFailureAt !== null &&
+      Date.now() - this.lastTransientFailureAt < SESSION_CHECK_COOLDOWN_MS
+    ) {
+      return Promise.resolve();
+    }
+    this.sessionCheck = this.restoreSession();
     return this.sessionCheck;
   }
 
@@ -141,8 +182,15 @@ export class AuthService {
         map(() => undefined),
         // 401 = sem sessão ou sessão expirada; 404 = o usuário foi apagado.
         // Em qualquer falha o app segue deslogado. Não é um erro para o usuário.
-        catchError(() => {
+        catchError((error: unknown) => {
           this.clearLocalSession();
+          // Rede, 429 ou 5xx não dizem nada sobre a sessão: esquece o resultado
+          // para que uma chamada posterior tente restaurá-la de novo (passado o
+          // intervalo de SESSION_CHECK_COOLDOWN_MS).
+          if (isTransientHttpError(error)) {
+            this.sessionCheck = null;
+            this.lastTransientFailureAt = Date.now();
+          }
           return of(undefined);
         }),
       ),

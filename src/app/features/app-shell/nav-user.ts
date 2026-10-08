@@ -1,8 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DOCUMENT, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideChevronsUpDown, lucideLogOut } from '@ng-icons/lucide';
+import { lucideChevronsUpDown, lucideLogOut, lucideMonitorSmartphone } from '@ng-icons/lucide';
 import { toast } from '@spartan-ng/brain/sonner';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -11,7 +11,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AppPaths } from '../../core/navigation/app-paths';
 
 /**
- * Usuário logado no rodapé da sidebar, com o menu de conta (logout).
+ * Usuário logado no rodapé da sidebar, com o menu de conta (sair deste
+ * dispositivo ou de todos).
  *
  * Os dados vêm do `AuthService`, que já os tem de `GET /me` (ou da resposta de
  * login): o guard da área logada só libera a rota depois disso.
@@ -19,7 +20,7 @@ import { AppPaths } from '../../core/navigation/app-paths';
 @Component({
   selector: 'ul[appNavUser]',
   imports: [NgTemplateOutlet, NgIcon, HlmAvatarImports, HlmDropdownMenuImports, HlmSidebarImports],
-  providers: [provideIcons({ lucideChevronsUpDown, lucideLogOut })],
+  providers: [provideIcons({ lucideChevronsUpDown, lucideLogOut, lucideMonitorSmartphone })],
   template: `
     @if (user(); as user) {
       <li hlmSidebarMenuItem>
@@ -76,6 +77,10 @@ import { AppPaths } from '../../core/navigation/app-paths';
             <ng-icon name="lucideLogOut" aria-hidden="true" />
             Sair
           </button>
+          <button hlmDropdownMenuItem [disabled]="loggingOut()" (triggered)="logoutAll()">
+            <ng-icon name="lucideMonitorSmartphone" aria-hidden="true" />
+            Sair de todos os dispositivos
+          </button>
         </div>
       </ng-template>
     }
@@ -84,6 +89,7 @@ import { AppPaths } from '../../core/navigation/app-paths';
 export class NavUser {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly window = inject(DOCUMENT).defaultView;
   protected readonly sidebar = inject(HlmSidebarService);
 
   protected readonly user = this.auth.currentUser;
@@ -112,6 +118,28 @@ export class NavUser {
           'Você saiu deste dispositivo, mas o servidor não confirmou o encerramento da sessão.',
         );
         void this.router.navigateByUrl(AppPaths.landing);
+      },
+    });
+  }
+
+  protected logoutAll(): void {
+    const confirmed = this.window?.confirm(
+      'Sair de todos os dispositivos? A sessão será encerrada em todos os navegadores e no app, inclusive neste.',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.loggingOut.set(true);
+    this.auth.logoutAll().subscribe({
+      complete: () => void this.router.navigateByUrl(AppPaths.login),
+      error: () => {
+        // O estado local já foi limpo (ver AuthService.logoutAll), mas sem a
+        // confirmação do servidor as outras sessões podem continuar abertas.
+        toast.error(
+          'Você saiu deste dispositivo, mas o servidor não confirmou o encerramento das outras sessões. Elas podem continuar ativas.',
+        );
+        void this.router.navigateByUrl(AppPaths.login);
       },
     });
   }

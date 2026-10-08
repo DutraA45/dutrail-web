@@ -12,7 +12,7 @@ import { ErrorAlert } from '../../../shared/ui/error-alert';
 
 /**
  * Destino do redirect da API após o login com Google:
- * `/auth/callback?code=<43 chars>`.
+ * `/auth/callback?code=<43 chars>` ou `/auth/callback?error=<código>`.
  *
  * O `code` não é um token. É um código de uso único, válido por 60 segundos,
  * que precisa ser trocado imediatamente em `POST /auth/google/exchange`. Só
@@ -54,6 +54,14 @@ export class GoogleCallbackPage {
   protected readonly errorMessages = signal<readonly string[] | null>(null);
 
   constructor() {
+    // `error` primeiro: a API manda um ou outro, e uma falha nunca deve virar
+    // tentativa de troca.
+    const errorCode = this.route.snapshot.queryParamMap.get('error');
+    if (errorCode !== null) {
+      this.handleCallbackError(errorCode);
+      return;
+    }
+
     const code = this.route.snapshot.queryParamMap.get('code');
     if (!code) {
       this.errorMessages.set(['O link de login está incompleto. Tente entrar novamente.']);
@@ -69,7 +77,7 @@ export class GoogleCallbackPage {
         // reapresenta um código que já foi consumido.
         next: () => void this.router.navigateByUrl(AppPaths.home, { replaceUrl: true }),
         error: (error: unknown) => {
-          this.clearCodeFromUrl();
+          this.clearParamsFromUrl();
           // Código já usado ou expirado (401) é esperado, por exemplo ao dar F5
           // nesta página. Não é um erro fatal, só "refaça o login".
           this.errorMessages.set(
@@ -83,7 +91,27 @@ export class GoogleCallbackPage {
       });
   }
 
-  private clearCodeFromUrl(): void {
+  /**
+   * Erros que a API devolve em `?error=` quando o callback do Google falha.
+   * Qualquer código desconhecido é tratado como `oauth_failed`.
+   */
+  private handleCallbackError(errorCode: string): void {
+    // O usuário cancelou na tela do Google: não é um erro, só volta ao login.
+    if (errorCode === 'access_denied') {
+      void this.router.navigateByUrl(AppPaths.login, { replaceUrl: true });
+      return;
+    }
+
+    this.clearParamsFromUrl();
+    this.errorMessages.set([
+      errorCode === 'email_not_verified'
+        ? 'O email da sua conta Google não está verificado, então não é possível entrar com ela. Verifique o email no Google ou crie uma conta com email e senha.'
+        : 'Não foi possível concluir o login. Tente de novo.',
+    ]);
+  }
+
+  /** Tira `code` e `error` da URL, sem deixar a URL antiga no histórico. */
+  private clearParamsFromUrl(): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
   }
 }

@@ -40,12 +40,10 @@ export class ActivityApi {
   }
 
   /**
-   * Envia um arquivo `.fit` para a API criar a atividade a partir dele.
-   *
-   * TODO(api): `POST /activities/import` ainda não existe na API (responde
-   * 404); o formato abaixo (multipart com o campo `file`) é o combinado para
-   * quando existir. O `Content-Type` não é definido aqui de propósito: com
-   * `FormData` o browser gera o `multipart/form-data` com o boundary correto.
+   * Envia um arquivo `.fit` para a API criar a atividade a partir dele
+   * (multipart com o campo `file`). O `Content-Type` não é definido aqui de
+   * propósito: com `FormData` o browser gera o `multipart/form-data` com o
+   * boundary correto.
    */
   importFitFile(file: File): Observable<Activity> {
     const body = new FormData();

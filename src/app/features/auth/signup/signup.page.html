@@ -35,7 +35,8 @@
               autocomplete="email"
               [formField]="signupForm.email"
             />
-            @for (error of signupForm.email().errors(); track error.kind) {
+            <!-- Só o primeiro erro: `email` e `pattern` podem falhar juntos com o mesmo texto. -->
+            @if (signupForm.email().errors()[0]; as error) {
               <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
             }
           </div>
