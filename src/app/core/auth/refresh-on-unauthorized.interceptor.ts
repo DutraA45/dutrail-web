@@ -12,10 +12,11 @@ import { TokenRefreshService } from './token-refresh.service';
  * Quando uma request para a API volta 401 (access token expirado), renova a
  * sessão com `/auth/refresh` e repete a request **uma vez**.
  *
- * - Rotas `/auth/*` não passam por aqui. Um 401 de `/auth/login` significa
- *   credenciais erradas, e um 401 de `/auth/refresh` significa que a sessão
- *   acabou. Tentar "renovar" nesses casos criaria um laço infinito
- *   (refresh → 401 → refresh → ...).
+ * - As rotas de autenticação sem Bearer (ver `isAuthEndpoint`) não passam por
+ *   aqui. Um 401 de `/auth/login` significa credenciais erradas, e um 401 de
+ *   `/auth/refresh` significa que a sessão acabou. Tentar "renovar" nesses
+ *   casos criaria um laço infinito (refresh → 401 → refresh → ...).
+ *   `/auth/logout-all` usa Bearer e passa por aqui como qualquer outra rota.
  * - Requests concorrentes que recebem 401 juntas esperam o mesmo refresh (ver
  *   `TokenRefreshService`).
  * - Se o próprio refresh for recusado (401), a sessão acabou de fato: limpa o

@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../http/api-base-url';
+import { AccessTokenStore } from './access-token.store';
 import { User } from './auth.models';
 import { AuthService, SESSION_CHECK_COOLDOWN_MS } from './auth.service';
 import { NETWORK_RETRY_DELAY_MS } from './token-refresh.service';
@@ -162,5 +163,56 @@ describe('AuthService.ensureSessionChecked', () => {
       backend.expectNone(`${API}/auth/refresh`);
       await again;
     });
+  });
+});
+
+describe('AuthService.logoutAll', () => {
+  let auth: AuthService;
+  let backend: HttpTestingController;
+  let tokens: AccessTokenStore;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: API },
+      ],
+    });
+    auth = TestBed.inject(AuthService);
+    backend = TestBed.inject(HttpTestingController);
+    tokens = TestBed.inject(AccessTokenStore);
+
+    auth.login({ email: USER.email, password: 'senha-segura' }).subscribe();
+    backend.expectOne(`${API}/auth/login`).flush({ accessToken: 'access-1', user: USER });
+  });
+
+  afterEach(() => backend.verify());
+
+  it('posts an empty body to /auth/logout-all and clears the local session', () => {
+    let done = false;
+
+    auth.logoutAll().subscribe({ complete: () => (done = true) });
+    const req = backend.expectOne(`${API}/auth/logout-all`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(done).toBe(true);
+    expect(auth.currentUser()).toBeNull();
+    expect(tokens.token()).toBeNull();
+  });
+
+  it('clears the local session even when the request fails', () => {
+    let status: number | undefined;
+
+    auth.logoutAll().subscribe({ error: (e) => (status = e.status) });
+    backend
+      .expectOne(`${API}/auth/logout-all`)
+      .flush(null, { status: 503, statusText: 'Unavailable' });
+
+    expect(status).toBe(503);
+    expect(auth.currentUser()).toBeNull();
+    expect(tokens.token()).toBeNull();
   });
 });

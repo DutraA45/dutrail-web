@@ -86,6 +86,36 @@ describe('refreshOnUnauthorizedInterceptor + apiRequestHeadersInterceptor', () =
     expect(status).toBe(401);
   });
 
+  it('does not refresh on a 401 from /auth/refresh with a query string', () => {
+    let status: number | undefined;
+
+    http.post(`${API}/auth/refresh?x=1`, null).subscribe({ error: (e) => (status = e.status) });
+    backend
+      .expectOne(`${API}/auth/refresh?x=1`)
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    backend.expectNone(`${API}/auth/refresh`);
+    expect(status).toBe(401);
+  });
+
+  it('refreshes and retries a 401 from /auth/logout-all, which uses the bearer token', () => {
+    tokens.set('expired');
+    let done = false;
+
+    http.post(`${API}/auth/logout-all`, null).subscribe({ complete: () => (done = true) });
+    backend
+      .expectOne(`${API}/auth/logout-all`)
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
+    backend.expectOne(`${API}/auth/refresh`).flush({ accessToken: 'fresh' });
+
+    const retried = backend.expectOne(`${API}/auth/logout-all`);
+    expect(retried.request.headers.get('Authorization')).toBe('Bearer fresh');
+    expect(retried.request.headers.get('X-Client-Type')).toBe('web');
+    retried.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(done).toBe(true);
+  });
+
   it('ends the local session and goes to /login when the refresh is rejected', () => {
     const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     tokens.set('expired');

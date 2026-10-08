@@ -9,18 +9,23 @@ import { ActivityApi } from '../../../core/activities/activity-api';
 import { describeApiError, httpStatusOf } from '../../../core/http/api-error';
 import { ErrorAlert } from '../../../shared/ui/error-alert';
 
+/** Tamanho máximo aceito pela API: 10 MiB. Exatamente esse tamanho ainda passa. */
+export const MAX_FIT_FILE_BYTES = 10 * 1024 * 1024;
+
 /**
  * Motivo para recusar o arquivo antes de enviá-lo, ou `null` se ele pode ir.
  *
- * Checa só a extensão e se o arquivo não está vazio. Validar o conteúdo (se é
- * mesmo um FIT de atividade) é papel da API, que é quem o interpreta.
+ * Checa só o tamanho (vazio ou acima do limite, que a API recusaria com 400 ou
+ * 413). A extensão não é verificada: a API também não a verifica (um `.FIT`
+ * maiúsculo ou sem extensão passa), e o `accept=".fit"` do input já é a dica.
+ * Validar o conteúdo (se é mesmo um FIT de atividade) é papel da API.
  */
-export function validateFitFile(file: Pick<File, 'name' | 'size'>): string | null {
-  if (!file.name.toLowerCase().endsWith('.fit')) {
-    return 'Selecione um arquivo com extensão .fit.';
-  }
+export function validateFitFile(file: Pick<File, 'size'>): string | null {
   if (file.size === 0) {
     return 'O arquivo selecionado está vazio.';
+  }
+  if (file.size > MAX_FIT_FILE_BYTES) {
+    return 'O arquivo passa de 10 MB, o tamanho máximo para importação.';
   }
   return null;
 }

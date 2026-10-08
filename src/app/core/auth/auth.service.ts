@@ -102,6 +102,23 @@ export class AuthService {
   }
 
   /**
+   * Encerra **todas** as sessões do usuário (todos os browsers e o app) com
+   * `POST /auth/logout-all` e limpa o estado local.
+   *
+   * Autentica pelo Bearer, não pelo cookie: os headers saem do interceptor, e
+   * um 401 aqui passa pelo refresh como em qualquer rota protegida. Como no
+   * `logout`, o estado local é limpo mesmo se a request falhar.
+   */
+  logoutAll(): Observable<void> {
+    return this.http.post<void>(`${this.apiBaseUrl}/auth/logout-all`, null).pipe(
+      tap({
+        complete: () => this.clearLocalSession(),
+        error: () => this.clearLocalSession(),
+      }),
+    );
+  }
+
+  /**
    * Garante que já se tentou restaurar a sessão nesta carga da página. É o que
    * os guards aguardam antes de decidir se uma rota pode ser aberta.
    *
