@@ -8,7 +8,7 @@ import { AccessTokenStore } from './access-token.store';
 import { refreshOnUnauthorizedInterceptor } from './refresh-on-unauthorized.interceptor';
 import { NETWORK_RETRY_DELAY_MS } from './token-refresh.service';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('refreshOnUnauthorizedInterceptor + apiRequestHeadersInterceptor', () => {
   let http: HttpClient;

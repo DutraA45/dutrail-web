@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { FitFileImport, MAX_FIT_FILE_BYTES, validateFitFile } from './fit-file-import';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('validateFitFile', () => {
   it('accepts any non-empty file up to exactly 10 MiB', () => {
@@ -56,7 +56,13 @@ describe('FitFileImport', () => {
     backend
       .expectOne(`${API}/activities/import`)
       .flush(
-        { statusCode: status, error: 'Error', message, path: '/activities/import', timestamp: '' },
+        {
+          statusCode: status,
+          error: 'Error',
+          message,
+          path: '/api/activities/import',
+          timestamp: '',
+        },
         { status, statusText: 'Error' },
       );
     fixture.detectChanges();

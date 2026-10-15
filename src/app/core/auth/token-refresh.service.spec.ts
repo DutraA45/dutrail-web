@@ -9,7 +9,7 @@ import {
   TokenRefreshService,
 } from './token-refresh.service';
 
-const API = 'http://api.test';
+const API = '/api';
 const REFRESH_URL = `${API}/auth/refresh`;
 
 describe('TokenRefreshService', () => {

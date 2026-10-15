@@ -9,7 +9,7 @@ function apiError(status: number, message: string | string[]): HttpErrorResponse
       statusCode: status,
       error: 'Bad Request',
       message,
-      path: '/activities',
+      path: '/api/activities',
       timestamp: '',
     },
   });

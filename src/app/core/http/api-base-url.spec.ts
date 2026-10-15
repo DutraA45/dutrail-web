@@ -1,13 +1,28 @@
-import { apiPathOf, isAuthEndpoint } from './api-base-url';
+import { apiPathOf, isApiUrl, isAuthEndpoint } from './api-base-url';
 
-const API = 'http://api.test';
+const API = '/api';
+
+describe('isApiUrl', () => {
+  it('is true only for URLs under the relative API base', () => {
+    expect(isApiUrl('/api/me', API)).toBe(true);
+    expect(isApiUrl('/api', API)).toBe(false);
+    expect(isApiUrl('/apix/me', API)).toBe(false);
+    expect(isApiUrl('/app/feed', API)).toBe(false);
+    expect(isApiUrl('https://third-party.test/api/me', API)).toBe(false);
+  });
+});
 
 describe('apiPathOf', () => {
-  it('returns the path after the API base, without query string or fragment', () => {
-    expect(apiPathOf(`${API}/me`, API)).toBe('/me');
-    expect(apiPathOf(`${API}/me?x=1`, API)).toBe('/me');
-    expect(apiPathOf(`${API}/activities/import#top`, API)).toBe('/activities/import');
-    expect(apiPathOf(`${API}/activities/abc`, API)).toBe('/activities/abc');
+  it('returns the path with the /api prefix, without query string or fragment', () => {
+    expect(apiPathOf(`${API}/me`, API)).toBe('/api/me');
+    expect(apiPathOf(`${API}/me?x=1`, API)).toBe('/api/me');
+    expect(apiPathOf(`${API}/activities/import#top`, API)).toBe('/api/activities/import');
+    expect(apiPathOf(`${API}/activities/abc`, API)).toBe('/api/activities/abc');
+  });
+
+  it('also works with an absolute base', () => {
+    const base = 'https://dutrail.test/api';
+    expect(apiPathOf(`${base}/auth/login?x=1`, base)).toBe('/api/auth/login');
   });
 
   it('returns null for URLs outside the API', () => {
@@ -18,34 +33,36 @@ describe('apiPathOf', () => {
 
 describe('isAuthEndpoint (401 never triggers a refresh)', () => {
   it.each([
-    '/auth/signup',
-    '/auth/login',
-    '/auth/refresh',
-    '/auth/logout',
-    '/auth/google/exchange',
-  ])('is true for %s', (path) => {
-    expect(isAuthEndpoint(`${API}${path}`, API)).toBe(true);
+    '/api/auth/signup',
+    '/api/auth/login',
+    '/api/auth/refresh',
+    '/api/auth/logout',
+    '/api/auth/google/exchange',
+  ])('is true for %s', (url) => {
+    expect(isAuthEndpoint(url, API)).toBe(true);
   });
 
   it('compares the path without the query string', () => {
-    expect(isAuthEndpoint(`${API}/auth/refresh?x=1`, API)).toBe(true);
+    expect(isAuthEndpoint('/api/auth/refresh?x=1', API)).toBe(true);
   });
 
   it.each([
-    // Usa Bearer: um 401 nela renova a sessão como em /me.
-    '/auth/logout-all',
-    '/auth/logout-all?x=1',
-    '/auth/google',
-    '/auth/loginx',
-    '/auth/login/extra',
-    '/auth/',
-    '/me',
-    '/activities/import',
-  ])('is false for %s', (path) => {
-    expect(isAuthEndpoint(`${API}${path}`, API)).toBe(false);
+    // Usa Bearer: um 401 nela renova a sessão como em /api/me.
+    '/api/auth/logout-all',
+    '/api/auth/logout-all?x=1',
+    '/api/auth/google',
+    '/api/auth/loginx',
+    '/api/auth/login/extra',
+    '/api/auth/',
+    '/api/me',
+    '/api/activities/import',
+    // Sem o prefixo não é uma rota da API (a API responde 404 a ela).
+    '/auth/login',
+  ])('is false for %s', (url) => {
+    expect(isAuthEndpoint(url, API)).toBe(false);
   });
 
   it('is false for URLs outside the API', () => {
-    expect(isAuthEndpoint('https://third-party.test/auth/login', API)).toBe(false);
+    expect(isAuthEndpoint('https://third-party.test/api/auth/login', API)).toBe(false);
   });
 });

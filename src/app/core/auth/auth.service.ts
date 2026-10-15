@@ -59,12 +59,15 @@ export class AuthService {
   }
 
   /**
-   * Primeiro passo do login com Google: sai do app e navega o browser para a API.
+   * Primeiro passo do login com Google: sai do app e navega o browser para
+   * `/api/auth/google`.
    *
    * Tem que ser navegação de página inteira (`window.location.href`), não
-   * `HttpClient`. A API responde 302 para `accounts.google.com`, e o Google
-   * bloqueia XHR/fetch cross-origin. Por ser navegação, essa rota também não
-   * leva `X-Client-Type`: o tipo de cliente é declarado depois, no exchange.
+   * `HttpClient`. A API grava o cookie de state e responde 302 para
+   * `accounts.google.com`, que bloqueia XHR/fetch cross-origin. Por ser
+   * navegação, essa rota também não leva `X-Client-Type`: o tipo de cliente é
+   * declarado depois, no exchange. Na volta, a API redireciona para
+   * `/auth/callback` (rota do Angular, fora do `/api`).
    * (`DOCUMENT.location` é o mesmo objeto que `window.location`, injetado para
    * não depender de globais.)
    */
@@ -103,7 +106,7 @@ export class AuthService {
 
   /**
    * Encerra **todas** as sessões do usuário (todos os browsers e o app) com
-   * `POST /auth/logout-all` e limpa o estado local.
+   * `POST /api/auth/logout-all` e limpa o estado local.
    *
    * Autentica pelo Bearer, não pelo cookie: os headers saem do interceptor, e
    * um 401 aqui passa pelo refresh como em qualquer rota protegida. Como no
@@ -124,7 +127,7 @@ export class AuthService {
    *
    * O access token só existe em memória, então após um F5 o app começa
    * "deslogado" mesmo com um refresh token válido no cookie. Consultar
-   * `/auth/refresh` antes de renderizar rotas protegidas evita mandar para o
+   * `/api/auth/refresh` antes de renderizar rotas protegidas evita mandar para o
    * login alguém que ainda tem sessão.
    *
    * A checagem roda uma vez só: depois dela, login/logout mantêm o estado

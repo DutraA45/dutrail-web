@@ -9,7 +9,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { API_BASE_URL } from '../../core/http/api-base-url';
 import { FeedService } from './feed.service';
 
-const API = 'http://api.test';
+const API = '/api';
 
 const user: User = {
   id: 'u1',

@@ -2,9 +2,9 @@
  * Tipos de atividade, espelhando a `dutrail-api`
  * (`dutrail-api/docs/ACTIVITIES-CONTRACT.md`).
  *
- * - `GET /activities?limit=&cursor=`: página de atividades do usuário logado
+ * - `GET /api/activities?limit=&cursor=`: página de atividades do usuário logado
  *   (`ActivityPage`), mais recentes primeiro.
- * - `GET /activities/:id`: uma `Activity`, sem envelope. Id inexistente, de
+ * - `GET /api/activities/:id`: uma `Activity`, sem envelope. Id inexistente, de
  *   outro usuário ou malformado recebem o mesmo 404: a API não revela se o id
  *   existe para outra pessoa.
  *
@@ -46,7 +46,7 @@ export interface Activity {
   updatedAt: string;
 }
 
-/** Resposta de `GET /activities`. */
+/** Resposta de `GET /api/activities`. */
 export interface ActivityPage {
   items: Activity[];
   /** Vai em `?cursor=` para buscar a próxima página; `null` = fim da lista. */

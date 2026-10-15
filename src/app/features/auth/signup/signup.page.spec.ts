@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { SignupPage } from './signup.page';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('SignupPage', () => {
   let fixture: ComponentFixture<SignupPage>;
@@ -52,7 +52,7 @@ describe('SignupPage', () => {
     backend
       .expectOne(`${API}/auth/signup`)
       .flush(
-        { statusCode: status, error: 'Error', message, path: '/auth/signup', timestamp: '' },
+        { statusCode: status, error: 'Error', message, path: '/api/auth/signup', timestamp: '' },
         { status, statusText: 'Error' },
       );
   }

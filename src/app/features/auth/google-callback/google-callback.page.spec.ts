@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { GoogleCallbackPage } from './google-callback.page';
 
-const API = 'http://api.test';
+const API = '/api';
 const GENERIC_MESSAGE = 'Não foi possível concluir o login. Tente de novo.';
 
 describe('GoogleCallbackPage', () => {

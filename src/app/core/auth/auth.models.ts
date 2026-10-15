@@ -17,7 +17,7 @@ export interface User {
   createdAt: string;
 }
 
-/** `POST /auth/signup`. A API rejeita campos desconhecidos com 400. */
+/** `POST /api/auth/signup`. A API rejeita campos desconhecidos com 400. */
 export interface SignupRequest {
   email: string;
   /** Entre 8 e 128 caracteres. */
@@ -25,13 +25,13 @@ export interface SignupRequest {
   name?: string;
 }
 
-/** `POST /auth/login`. Enviar qualquer campo além destes gera 400. */
+/** `POST /api/auth/login`. Enviar qualquer campo além destes gera 400. */
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
-/** `POST /auth/google/exchange`. */
+/** `POST /api/auth/google/exchange`. */
 export interface GoogleCodeExchangeRequest {
   /** Exatamente 43 caracteres base64url, de uso único e válido por 60 s. */
   code: string;
@@ -43,7 +43,7 @@ export interface AuthResponse {
   user: User;
 }
 
-/** Resposta de `POST /auth/refresh` no fluxo web. */
+/** Resposta de `POST /api/auth/refresh` no fluxo web. */
 export interface RefreshResponse {
   accessToken: string;
 }
