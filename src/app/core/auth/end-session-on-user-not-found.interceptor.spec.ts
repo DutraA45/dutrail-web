@@ -8,7 +8,7 @@ import { AccessTokenStore } from './access-token.store';
 import { endSessionOnUserNotFoundInterceptor } from './end-session-on-user-not-found.interceptor';
 import { refreshOnUnauthorizedInterceptor } from './refresh-on-unauthorized.interceptor';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('endSessionOnUserNotFoundInterceptor', () => {
   let http: HttpClient;
@@ -46,7 +46,7 @@ describe('endSessionOnUserNotFoundInterceptor', () => {
     statusCode: 404,
     error: 'Not Found',
     message: 'User not found',
-    path: '/me',
+    path: '/api/me',
     timestamp: '',
   };
 
@@ -78,7 +78,7 @@ describe('endSessionOnUserNotFoundInterceptor', () => {
     });
     backend
       .expectOne(`${API}/activities/import`)
-      .flush({ ...userNotFoundBody, path: '/activities/import' }, userNotFound);
+      .flush({ ...userNotFoundBody, path: '/api/activities/import' }, userNotFound);
 
     expect(status).toBe(404);
     expect(tokens.token()).toBeNull();

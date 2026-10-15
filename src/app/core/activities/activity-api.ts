@@ -12,7 +12,7 @@ export interface ActivityPageRequest {
 }
 
 /**
- * Acesso às rotas `/activities` da API.
+ * Acesso às rotas `/api/activities` da API.
  *
  * Fica no `core` porque feed, lista e detalhe consomem as mesmas atividades.
  */

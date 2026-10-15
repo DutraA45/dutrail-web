@@ -11,7 +11,7 @@ import { API_BASE_URL } from '../../core/http/api-base-url';
 import { apiRequestHeadersInterceptor } from '../../core/http/api-request-headers.interceptor';
 import { NavUser } from './nav-user';
 
-const API = 'http://api.test';
+const API = '/api';
 const USER: User = {
   id: 'u1',
   email: 'ana@example.com',

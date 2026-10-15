@@ -15,7 +15,7 @@ import { ErrorAlert } from '../../../shared/ui/error-alert';
  * `/auth/callback?code=<43 chars>` ou `/auth/callback?error=<código>`.
  *
  * O `code` não é um token. É um código de uso único, válido por 60 segundos,
- * que precisa ser trocado imediatamente em `POST /auth/google/exchange`. Só
+ * que precisa ser trocado imediatamente em `POST /api/auth/google/exchange`. Só
  * nessa troca a sessão é criada (access token + cookie do refresh token).
  */
 @Component({

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../http/api-base-url';
 import { ActivityApi } from './activity-api';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('ActivityApi', () => {
   let api: ActivityApi;

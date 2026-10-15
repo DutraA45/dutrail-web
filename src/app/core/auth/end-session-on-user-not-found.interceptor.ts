@@ -12,16 +12,16 @@ import { AuthService } from './auth.service';
  * o access token ainda válido. Comparadas pelo método e pelo caminho exato.
  */
 const USER_NOT_FOUND_ROUTES: readonly { method: string; path: string }[] = [
-  { method: 'GET', path: '/me' },
-  { method: 'POST', path: '/activities/import' },
+  { method: 'GET', path: '/api/me' },
+  { method: 'POST', path: '/api/activities/import' },
 ];
 
 /**
- * Um 404 em `GET /me` ou `POST /activities/import` é **sessão encerrada**: o
+ * Um 404 em `GET /api/me` ou `POST /api/activities/import` é **sessão encerrada**: o
  * usuário não existe mais. Limpa a sessão local e manda para o login, sem
  * mensagem (a tela não deve mostrar um "não encontrado" genérico).
  *
- * Qualquer outro 404 passa intacto. Em especial o de `GET /activities/:id`,
+ * Qualquer outro 404 passa intacto. Em especial o de `GET /api/activities/:id`,
  * que é só uma atividade inexistente ou de outra pessoa.
  *
  * Não tenta refresh nem repete nada: só observa a resposta e repassa o erro.

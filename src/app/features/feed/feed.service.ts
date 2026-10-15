@@ -22,11 +22,11 @@ export interface FeedItem {
  * recentes primeiro, paginadas por cursor.
  *
  * TODO(api): hoje o feed tem só as atividades do próprio usuário
- * (`GET /activities`, que já vem ordenado). A API ainda não tem o conceito de
+ * (`GET /api/activities`, que já vem ordenado). A API ainda não tem o conceito de
  * amigos nem um endpoint de feed. Juntar várias fontes aqui não funcionaria
  * com paginação (cada fonte teria seu cursor e a ordem entre páginas se
  * perderia), então o feed de amigos precisa vir pronto do servidor, ex.
- * `GET /feed?cursor=`, com o autor em cada item. Quando existir, ele substitui
+ * `GET /api/feed?cursor=`, com o autor em cada item. Quando existir, ele substitui
  * `listMine()` aqui e a página não muda: o `FeedItem` já carrega o autor.
  */
 @Service()

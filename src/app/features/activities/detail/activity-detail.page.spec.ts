@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { ActivityDetailPage } from './activity-detail.page';
 
-const API = 'http://api.test';
+const API = '/api';
 
 describe('ActivityDetailPage', () => {
   let fixture: ComponentFixture<ActivityDetailPage>;
@@ -34,7 +34,7 @@ describe('ActivityDetailPage', () => {
         statusCode: 404,
         error: 'Not Found',
         message: 'Activity not found',
-        path: `/activities/${id}`,
+        path: `/api/activities/${id}`,
         timestamp: '2026-09-23T20:29:45.919Z',
       },
       { status: 404, statusText: 'Not Found' },

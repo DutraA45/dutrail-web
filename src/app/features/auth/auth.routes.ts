@@ -6,7 +6,7 @@ import { guestOnlyGuard } from '../../core/auth/guest-only.guard';
  *
  * O callback do Google não tem `guestOnlyGuard`: ele precisa trocar o código
  * mesmo que exista uma sessão anterior, e o guard dispararia um
- * `/auth/refresh` desnecessário antes da troca.
+ * `/api/auth/refresh` desnecessário antes da troca.
  */
 export const authRoutes: Routes = [
   {

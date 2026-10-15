@@ -14,7 +14,7 @@ import { AppPaths } from '../../core/navigation/app-paths';
  * Usuário logado no rodapé da sidebar, com o menu de conta (sair deste
  * dispositivo ou de todos).
  *
- * Os dados vêm do `AuthService`, que já os tem de `GET /me` (ou da resposta de
+ * Os dados vêm do `AuthService`, que já os tem de `GET /api/me` (ou da resposta de
  * login): o guard da área logada só libera a rota depois disso.
  */
 @Component({

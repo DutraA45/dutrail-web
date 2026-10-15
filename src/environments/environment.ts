@@ -1,10 +1,11 @@
 /**
  * Configuração de ambiente.
  *
- * Em desenvolvimento a API roda em `http://localhost:3000` e só aceita CORS da
- * origem `http://localhost:4200` (variável `FRONTEND_URL` da API), por isso o
- * `ng serve` precisa continuar na porta padrão.
+ * A API é servida pela **mesma origem** do frontend, sob `/api`: em produção o
+ * Nginx encaminha `/api/` para o NestJS; em desenvolvimento o `ng serve` faz o
+ * mesmo com o `proxy.conf.json`. Por isso a base é relativa: sem CORS, e o
+ * cookie do refresh token (`Path=/api/auth`) é enviado pelo próprio browser.
  */
 export const environment = {
-  apiBaseUrl: 'http://localhost:3000',
+  apiBaseUrl: '/api',
 };

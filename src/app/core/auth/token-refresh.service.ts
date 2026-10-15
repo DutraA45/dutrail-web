@@ -24,7 +24,7 @@ export const REFRESH_LOCK_NAME = 'dutrail-refresh';
 export const NETWORK_RETRY_DELAY_MS = 300;
 
 /**
- * Renova o access token com `POST /auth/refresh`, garantindo **um único
+ * Renova o access token com `POST /api/auth/refresh`, garantindo **um único
  * refresh em voo** por vez.
  *
  * Por que isso importa: o refresh token é de uso único. Cada chamada o invalida

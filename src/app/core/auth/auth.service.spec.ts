@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../http/api-base-url';
 import { AccessTokenStore } from './access-token.store';
@@ -7,7 +8,7 @@ import { User } from './auth.models';
 import { AuthService, SESSION_CHECK_COOLDOWN_MS } from './auth.service';
 import { NETWORK_RETRY_DELAY_MS } from './token-refresh.service';
 
-const API = 'http://api.test';
+const API = '/api';
 const USER: User = {
   id: 'u1',
   email: 'ana@example.com',
@@ -214,5 +215,25 @@ describe('AuthService.logoutAll', () => {
     expect(status).toBe(503);
     expect(auth.currentUser()).toBeNull();
     expect(tokens.token()).toBeNull();
+  });
+});
+
+describe('AuthService.startGoogleSignIn', () => {
+  it('navigates the whole page (not XHR) to /api/auth/google, on the same origin', () => {
+    const location = { href: '' };
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: API },
+        { provide: DOCUMENT, useValue: { location, defaultView: null } },
+      ],
+    });
+    const backend = TestBed.inject(HttpTestingController);
+
+    TestBed.inject(AuthService).startGoogleSignIn();
+
+    expect(location.href).toBe('/api/auth/google');
+    backend.verify();
   });
 });
